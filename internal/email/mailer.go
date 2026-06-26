@@ -49,7 +49,7 @@ func (m *Mailer) SendVerificationEmail(toEmail, token string) error {
 		return fmt.Errorf("failed to parse verification template: %w", err)
 	}
 
-	verifyLink := fmt.Sprintf("%s/api/auth/verify-email?token=%s", config.AppConfig.AppUrl, token)
+	verifyLink := fmt.Sprintf("%s:%s/api/auth/verify-email?token=%s", config.AppConfig.AppUrl, config.AppConfig.AppPort, token)
 
 	data := map[string]string{
 		"VerifyLink": verifyLink,
