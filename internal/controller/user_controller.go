@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 	"recruitment-api/internal/dto"
 	"recruitment-api/internal/service"
@@ -17,9 +18,9 @@ func NewUserController(userService service.UserService) *UserController {
 }
 
 func (uc *UserController) GetAll(c *gin.Context) {
-	users, err := uc.userService.GetAll()
+	users, err := uc.userService.GetVerifiedUsers()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Message: err.Error()})
 		return
 	}
 
@@ -29,24 +30,21 @@ func (uc *UserController) GetAll(c *gin.Context) {
 func (uc *UserController) UpdateStatus(c *gin.Context) {
 	var req dto.UpdateStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Message: err.Error()})
 		return
 	}
 
 	if err := uc.userService.UpdateStatus(req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		switch {
+		case errors.Is(err, service.ErrStatusOutOfRange),
+			errors.Is(err, service.ErrUserNotFound),
+			errors.Is(err, service.ErrUserNotVerified):
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Message: err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Message: err.Error()})
+		}
 		return
 	}
 
 	c.JSON(http.StatusOK, dto.MessageResponse{Message: "Status updated successfully"})
-}
-
-func (uc *UserController) GetStatistics(c *gin.Context) {
-	stats, err := uc.userService.GetStatistics()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, stats)
 }

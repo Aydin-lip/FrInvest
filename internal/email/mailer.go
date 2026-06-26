@@ -30,6 +30,7 @@ func NewMailer() *Mailer {
 }
 
 func (m *Mailer) sendEmail(to, subject, body string) error {
+	fmt.Println(m)
 	auth := smtp.PlainAuth("", m.username, m.password, m.host)
 
 	headers := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=\"utf-8\"\r\n\r\n",
@@ -41,16 +42,18 @@ func (m *Mailer) sendEmail(to, subject, body string) error {
 	return smtp.SendMail(addr, auth, m.from, []string{to}, msg)
 }
 
-func (m *Mailer) SendVerificationCode(toEmail, code string) error {
-	tmplPath := filepath.Join("templates", "verification_code.html")
+func (m *Mailer) SendVerificationEmail(toEmail, token string) error {
+	tmplPath := filepath.Join("templates", "verification_email.html")
 	tmpl, err := template.ParseFiles(tmplPath)
 	if err != nil {
 		return fmt.Errorf("failed to parse verification template: %w", err)
 	}
 
+	verifyLink := fmt.Sprintf("%s/api/auth/verify-email?token=%s", config.AppConfig.AppUrl, token)
+
 	data := map[string]string{
-		"Code":  code,
-		"Email": toEmail,
+		"VerifyLink": verifyLink,
+		"Email":      toEmail,
 	}
 
 	var buf bytes.Buffer
@@ -58,25 +61,27 @@ func (m *Mailer) SendVerificationCode(toEmail, code string) error {
 		return fmt.Errorf("failed to execute verification template: %w", err)
 	}
 
-	return m.sendEmail(toEmail, "Your Verification Code", buf.String())
+	return m.sendEmail(toEmail, "Verify Your Email", buf.String())
 }
 
-func (m *Mailer) SendWelcomeEmail(toEmail, firstName string) error {
-	tmplPath := filepath.Join("templates", "welcome.html")
+func (m *Mailer) SendWebinarEmail(toEmail, firstName string) error {
+	tmplPath := filepath.Join("templates", "webinar_email.html")
 	tmpl, err := template.ParseFiles(tmplPath)
 	if err != nil {
-		return fmt.Errorf("failed to parse welcome template: %w", err)
+		return fmt.Errorf("failed to parse webinar template: %w", err)
 	}
 
 	data := map[string]string{
-		"FirstName": firstName,
-		"Email":     toEmail,
+		"FirstName":       firstName,
+		"Email":           toEmail,
+		"WebinarDateTime": config.AppConfig.WebinarDateTime,
+		"WebinarLink":     config.AppConfig.WebinarLink,
 	}
 
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
-		return fmt.Errorf("failed to execute welcome template: %w", err)
+		return fmt.Errorf("failed to execute webinar template: %w", err)
 	}
 
-	return m.sendEmail(toEmail, "Welcome to Our Platform!", buf.String())
+	return m.sendEmail(toEmail, "Webinar Registration Confirmed", buf.String())
 }

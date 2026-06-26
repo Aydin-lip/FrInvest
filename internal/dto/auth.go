@@ -2,7 +2,7 @@ package dto
 
 // Request DTOs
 
-type SendCodeRequest struct {
+type SendVerificationRequest struct {
 	Email string `json:"email" binding:"required,email"`
 }
 
@@ -11,12 +11,6 @@ type RegisterRequest struct {
 	LastName    *string `json:"lastName"`
 	PhoneNumber *string `json:"phoneNumber"`
 	Email       string  `json:"email" binding:"required,email"`
-	Code        string  `json:"code" binding:"required"`
-}
-
-type LoginRequest struct {
-	Email string `json:"email" binding:"required,email"`
-	Code  string `json:"code" binding:"required"`
 }
 
 type UpdateStatusRequest struct {
@@ -30,18 +24,13 @@ type MessageResponse struct {
 	Message string `json:"message"`
 }
 
-type UserResponse struct {
-	ID          uint64  `json:"id"`
-	FirstName   string  `json:"firstName"`
-	LastName    *string `json:"lastName"`
-	PhoneNumber *string `json:"phoneNumber,omitempty"`
-	Email       string  `json:"email"`
-	Status      int8    `json:"status"`
+type TokenResponse struct {
+	Token string `json:"token"`
 }
 
-type AuthResponse struct {
-	Token string       `json:"token"`
-	User  UserResponse `json:"user"`
+type RateLimitResponse struct {
+	Message          string `json:"message"`
+	RemainingSeconds int    `json:"remainingSeconds"`
 }
 
 type UserListItem struct {
@@ -51,14 +40,14 @@ type UserListItem struct {
 	Status    int8    `json:"status"`
 }
 
-type StatisticsResponse struct {
-	New        float64 `json:"new"`
-	Reviewed   float64 `json:"reviewed"`
-	Interviewed float64 `json:"interviewed"`
-	OfferSent  float64 `json:"offerSent"`
-	Rejected   float64 `json:"rejected"`
+type StatusPercentagesResponse struct {
+	New         float64 `json:"New"`
+	Reviewed    float64 `json:"Reviewed"`
+	Interviewed float64 `json:"Interviewed"`
+	OfferSent   float64 `json:"OfferSent"`
+	Rejected    float64 `json:"Rejected"`
 }
 
 type ErrorResponse struct {
-	Error string `json:"error"`
+	Message string `json:"message"`
 }

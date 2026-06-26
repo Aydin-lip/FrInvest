@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webinar Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #4f46e5;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .body {
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .body h2 {
+            color: #333333;
+            font-size: 22px;
+        }
+        .body p {
+            color: #555555;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+        .highlight {
+            color: #4f46e5;
+            font-weight: bold;
+        }
+        .cta {
+            display: inline-block;
+            margin-top: 20px;
+            background-color: #4f46e5;
+            color: white !important;
+            padding: 14px 30px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .footer {
+            background-color: #f9f9f9;
+            padding: 20px 30px;
+            text-align: center;
+            color: #999999;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>You're Registered!</h1>
+        </div>
+        <div class="body">
+            <h2>Hi <span class="highlight">{{.FirstName}}</span>,</h2>
+            <p>You are registered for our webinar.</p>
+            <p>Webinar starts at: <strong>{{.WebinarDateTime}}</strong></p>
+            <a class="cta" href="{{.WebinarLink}}">Join Webinar</a>
+        </div>
+        <div class="footer">
+            <p>This is an automated message. Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

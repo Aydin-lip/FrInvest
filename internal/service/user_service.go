@@ -3,14 +3,22 @@ package service
 import (
 	"errors"
 	"fmt"
+	"math"
 	"recruitment-api/internal/dto"
 	"recruitment-api/internal/repository"
+
+	"gorm.io/gorm"
+)
+
+var (
+	ErrStatusOutOfRange  = errors.New("status must be between 0 and 4")
+	ErrUserNotVerified   = errors.New("user is not verified")
 )
 
 type UserService interface {
-	GetAll() ([]dto.UserListItem, error)
+	GetVerifiedUsers() ([]dto.UserListItem, error)
 	UpdateStatus(req dto.UpdateStatusRequest) error
-	GetStatistics() (*dto.StatisticsResponse, error)
+	GetStatusPercentages() (*dto.StatusPercentagesResponse, error)
 }
 
 type userService struct {
@@ -21,13 +29,13 @@ func NewUserService(userRepo repository.UserRepository) UserService {
 	return &userService{userRepo: userRepo}
 }
 
-func (s *userService) GetAll() ([]dto.UserListItem, error) {
-	users, err := s.userRepo.GetAll()
+func (s *userService) GetVerifiedUsers() ([]dto.UserListItem, error) {
+	users, err := s.userRepo.GetVerifiedUsers()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch users")
 	}
 
-	var result []dto.UserListItem
+	result := make([]dto.UserListItem, 0, len(users))
 	for _, u := range users {
 		result = append(result, dto.UserListItem{
 			FirstName: u.FirstName,
@@ -37,58 +45,57 @@ func (s *userService) GetAll() ([]dto.UserListItem, error) {
 		})
 	}
 
-	// Return empty slice instead of nil
-	if result == nil {
-		result = []dto.UserListItem{}
-	}
-
 	return result, nil
 }
 
 func (s *userService) UpdateStatus(req dto.UpdateStatusRequest) error {
 	if req.Status < 0 || req.Status > 4 {
-		return errors.New("status must be between 0 and 4")
+		return ErrStatusOutOfRange
 	}
 
-	// Check user exists
-	_, err := s.userRepo.FindByID(req.UserID)
+	user, err := s.userRepo.FindByID(req.UserID)
 	if err != nil {
-		return errors.New("user not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrUserNotFound
+		}
+		return fmt.Errorf("database error")
 	}
 
-	return s.userRepo.UpdateStatus(req.UserID, req.Status)
+	if !user.Verify {
+		return ErrUserNotVerified
+	}
+
+	if err := s.userRepo.UpdateStatus(req.UserID, req.Status); err != nil {
+		return fmt.Errorf("failed to update status")
+	}
+
+	return nil
 }
 
-func (s *userService) GetStatistics() (*dto.StatisticsResponse, error) {
-	total, err := s.userRepo.GetTotalCount()
+func (s *userService) GetStatusPercentages() (*dto.StatusPercentagesResponse, error) {
+	total, err := s.userRepo.GetVerifiedTotalCount()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user count")
 	}
 
 	if total == 0 {
-		return &dto.StatisticsResponse{
-			New:         0,
-			Reviewed:    0,
-			Interviewed: 0,
-			OfferSent:   0,
-			Rejected:    0,
-		}, nil
+		return &dto.StatusPercentagesResponse{}, nil
 	}
 
-	counts, err := s.userRepo.GetStatusCounts()
+	counts, err := s.userRepo.GetVerifiedStatusCounts()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get status counts")
 	}
 
-	calc := func(statusCount int64) float64 {
-		return (float64(statusCount) * 100) / float64(total)
+	calc := func(status int8) float64 {
+		return math.Round((float64(counts[status]) / float64(total)) * 100)
 	}
 
-	return &dto.StatisticsResponse{
-		New:         calc(counts[0]),
-		Reviewed:    calc(counts[1]),
-		Interviewed: calc(counts[2]),
-		OfferSent:   calc(counts[3]),
-		Rejected:    calc(counts[4]),
+	return &dto.StatusPercentagesResponse{
+		New:         calc(0),
+		Reviewed:    calc(1),
+		Interviewed: calc(2),
+		OfferSent:   calc(3),
+		Rejected:    calc(4),
 	}, nil
 }

@@ -11,17 +11,22 @@ import (
 )
 
 type Config struct {
-	AppPort      string
-	DBHost       string
-	DBPort       string
-	DBName       string
-	DBUser       string
-	DBPassword   string
-	JWTSecret    string
-	SMTPHost     string
-	SMTPPort     string
-	SMTPUsername string
-	SMTPPassword string
+	AppUrl             string
+	AppPort            string
+	DBHost             string
+	DBPort             string
+	DBName             string
+	DBUser             string
+	DBPassword         string
+	SMTPHost           string
+	SMTPPort           string
+	SMTPUsername       string
+	SMTPPassword       string
+	FrontendURL        string
+	FrontendSuccessURL string
+	FrontendErrorURL   string
+	WebinarDateTime    string
+	WebinarLink        string
 }
 
 var AppConfig Config
@@ -30,17 +35,22 @@ func Load() {
 	_ = godotenv.Load()
 
 	AppConfig = Config{
-		AppPort:      getEnv("APP_PORT", "8080"),
-		DBHost:       getEnv("DB_HOST", "localhost"),
-		DBPort:       getEnv("DB_PORT", "3306"),
-		DBName:       getEnv("DB_NAME", "app_db"),
-		DBUser:       getEnv("DB_USER", "root"),
-		DBPassword:   getEnv("DB_PASSWORD", "password"),
-		JWTSecret:    getEnv("JWT_SECRET", "super_secret_key"),
-		SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),
-		SMTPPort:     getEnv("SMTP_PORT", "587"),
-		SMTPUsername: getEnv("SMTP_USERNAME", ""),
-		SMTPPassword: getEnv("SMTP_PASSWORD", ""),
+		AppUrl:             getEnv("APP_URL", "localhost"),
+		AppPort:            getEnv("APP_PORT", "8080"),
+		DBHost:             getEnv("DB_HOST", "localhost"),
+		DBPort:             getEnv("DB_PORT", "3306"),
+		DBName:             getEnv("DB_NAME", "app_db"),
+		DBUser:             getEnv("DB_USER", "root"),
+		DBPassword:         getEnv("DB_PASSWORD", "password"),
+		SMTPHost:           getEnv("SMTP_HOST", "smtp.gmail.com"),
+		SMTPPort:           getEnv("SMTP_PORT", "587"),
+		SMTPUsername:       getEnv("SMTP_USERNAME", ""),
+		SMTPPassword:       getEnv("SMTP_PASSWORD", ""),
+		FrontendURL:        getEnv("FRONTEND_URL", "http://localhost:3000"),
+		FrontendSuccessURL: getEnv("FRONTEND_SUCCESS_URL", "http://localhost:3000/success"),
+		FrontendErrorURL:   getEnv("FRONTEND_ERROR_URL", "http://localhost:3000/error"),
+		WebinarDateTime:    getEnv("WEBINAR_DATETIME", "TBD"),
+		WebinarLink:        getEnv("WEBINAR_LINK", "https://example.com/webinar"),
 	}
 }
 

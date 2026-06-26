@@ -8,10 +8,12 @@ import (
 )
 
 type VerificationRepository interface {
-	FindActiveByEmail(email string) (*models.VerificationCode, error)
-	FindValidCode(email, code string) (*models.VerificationCode, error)
-	Create(vc *models.VerificationCode) error
-	MarkAsUsed(id uint64) error
+	Create(vt *models.VerificationToken) error
+	FindByToken(token string) (*models.VerificationToken, error)
+	FindLatestValidByUserID(userID uint64) (*models.VerificationToken, error)
+	FindLatestUnusedByUserID(userID uint64) (*models.VerificationToken, error)
+	UpdateToken(id uint64, token string, expiresAt time.Time) error
+	MarkAsUsed(id uint64, usedAt time.Time) error
 }
 
 type verificationRepository struct {
@@ -22,32 +24,52 @@ func NewVerificationRepository(db *gorm.DB) VerificationRepository {
 	return &verificationRepository{db: db}
 }
 
-// FindActiveByEmail finds a code that is not expired and not used
-func (r *verificationRepository) FindActiveByEmail(email string) (*models.VerificationCode, error) {
-	var vc models.VerificationCode
-	err := r.db.Where("email = ? AND is_used = false AND expires_at > ?", email, time.Now()).
-		First(&vc).Error
+func (r *verificationRepository) Create(vt *models.VerificationToken) error {
+	return r.db.Create(vt).Error
+}
+
+func (r *verificationRepository) FindByToken(token string) (*models.VerificationToken, error) {
+	var vt models.VerificationToken
+	err := r.db.Where("token = ?", token).First(&vt).Error
 	if err != nil {
 		return nil, err
 	}
-	return &vc, nil
+	return &vt, nil
 }
 
-// FindValidCode finds a matching, unexpired, unused code
-func (r *verificationRepository) FindValidCode(email, code string) (*models.VerificationCode, error) {
-	var vc models.VerificationCode
-	err := r.db.Where("email = ? AND code = ? AND is_used = false AND expires_at > ?", email, code, time.Now()).
-		First(&vc).Error
+func (r *verificationRepository) FindLatestValidByUserID(userID uint64) (*models.VerificationToken, error) {
+	var vt models.VerificationToken
+	err := r.db.Where("user_id = ? AND used_at IS NULL AND expires_at > ?", userID, time.Now()).
+		Order("created_at DESC").
+		First(&vt).Error
 	if err != nil {
 		return nil, err
 	}
-	return &vc, nil
+	return &vt, nil
 }
 
-func (r *verificationRepository) Create(vc *models.VerificationCode) error {
-	return r.db.Create(vc).Error
+func (r *verificationRepository) FindLatestUnusedByUserID(userID uint64) (*models.VerificationToken, error) {
+	var vt models.VerificationToken
+	err := r.db.Where("user_id = ? AND used_at IS NULL", userID).
+		Order("created_at DESC").
+		First(&vt).Error
+	if err != nil {
+		return nil, err
+	}
+	return &vt, nil
 }
 
-func (r *verificationRepository) MarkAsUsed(id uint64) error {
-	return r.db.Model(&models.VerificationCode{}).Where("id = ?", id).Update("is_used", true).Error
+func (r *verificationRepository) UpdateToken(id uint64, token string, expiresAt time.Time) error {
+	return r.db.Model(&models.VerificationToken{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"token":      token,
+			"expires_at": expiresAt,
+		}).Error
+}
+
+func (r *verificationRepository) MarkAsUsed(id uint64, usedAt time.Time) error {
+	return r.db.Model(&models.VerificationToken{}).
+		Where("id = ?", id).
+		Update("used_at", usedAt).Error
 }
